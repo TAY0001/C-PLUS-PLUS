@@ -1,0 +1,949 @@
+drop table Donation;
+drop table Payment;
+drop table Promotion_Details;
+drop table Promotion;
+drop table Animal_Treatment;
+drop table Medical_Treatment;
+drop table Delivery_Services;
+drop table Training_Service_Details;
+drop table Training_Service;
+drop table Trainer;
+drop table Application;
+drop table Adoption_Counselor;
+drop table Adoption;
+drop table Customer;
+drop table Animal;
+drop table Shelter;
+
+Set linesize 300
+Set pagesize 300
+
+ALTER SESSION SET NLS_DATE_FORMAT = 'dd/mm/yyyy';
+
+CREATE TABLE Shelter (
+    Shelter_ID VARCHAR2(10) NOT NULL,
+    Location VARCHAR2(15),
+    PRIMARY KEY (Shelter_ID)
+);
+
+CREATE TABLE Animal (
+    Animal_ID VARCHAR2(10) NOT NULL,
+    Animal_Name VARCHAR2(15),
+    Animal_Type VARCHAR2(15),
+    Age NUMBER(3),
+    Breed VARCHAR2(19),
+    Year_Born NUMBER(4),
+    Animal_Passport_ID VARCHAR2(15),
+    Passport_ExpiryDate DATE,
+    Shelter_ID VARCHAR2(10),
+    PRIMARY KEY (Animal_ID),
+    FOREIGN KEY (Shelter_ID) REFERENCES Shelter(Shelter_ID),
+    CONSTRAINT chk_animal_age CHECK (Age >= 0),
+    CONSTRAINT chk_year_born CHECK (Year_Born BETWEEN 2015 AND 2024) 
+);
+
+CREATE TABLE Customer (
+    Customer_ID VARCHAR2(10) NOT NULL,
+    Name VARCHAR2(30),
+    Phone_Number VARCHAR2(12),
+    Email VARCHAR2(26),
+    Address VARCHAR2(50),
+    Age NUMBER(2),
+    Salary NUMBER(10,2),
+    Trial_Program CHAR(3),
+    Rental_Own VARCHAR2(10),
+    Breeding_Experience VARCHAR2(25),
+    PRIMARY KEY (Customer_ID),
+    CONSTRAINT chk_age CHECK (Age >= 0),
+    CONSTRAINT chk_salary CHECK (Salary >= 0),
+    CONSTRAINT CHK_PHONE_NUMBER CHECK (Phone_Number LIKE '___-___-____'),
+    CONSTRAINT CHK_EMAIL CHECK (Email LIKE '%@%.%')
+);
+
+CREATE TABLE Adoption (
+    Adoption_ID VARCHAR2(11) NOT NULL,
+    Adoption_Date DATE,
+    Adoption_Fee NUMBER(9,2),
+    Animal_ID VARCHAR2(10),
+    Customer_ID VARCHAR2(10),
+    PRIMARY KEY (Adoption_ID),
+    FOREIGN KEY (Animal_ID) REFERENCES Animal(Animal_ID),
+    FOREIGN KEY (Customer_ID) REFERENCES Customer(Customer_ID),
+    CONSTRAINT chk_adoption_fee CHECK (Adoption_Fee >= 0)
+);
+
+CREATE TABLE Adoption_Counselor (
+    Adoption_Counselor_ID VARCHAR2(21) NOT NULL,
+    Counselor_Name VARCHAR2(25),
+    PRIMARY KEY (Adoption_Counselor_ID)
+);
+
+CREATE TABLE Application (
+    Application_ID VARCHAR2(15) NOT NULL,
+    Submission_Date DATE,
+    Accepted_or_Rejected VARCHAR2(20),
+    Adoption_Counselor_ID VARCHAR2(21),
+    Customer_ID VARCHAR2(10),
+    PRIMARY KEY (Application_ID),
+    FOREIGN KEY (Adoption_Counselor_ID) REFERENCES Adoption_Counselor(Adoption_Counselor_ID),
+    FOREIGN KEY (Customer_ID) REFERENCES Customer(Customer_ID)
+);
+
+CREATE TABLE Trainer (
+    Trainer_ID VARCHAR2(10) NOT NULL,
+    Trainer_Name VARCHAR2(25),
+    Phone_Number VARCHAR2(12),
+    Email VARCHAR2(25),
+    Experience_Level VARCHAR2(26),
+    PRIMARY KEY (Trainer_ID),
+    CONSTRAINT chk_trainer_phonenumber CHECK (Phone_Number LIKE '___-___-____'),
+    CONSTRAINT chk_trainer_email CHECK (Email LIKE '%@%.%')
+);
+
+CREATE TABLE Training_Service (
+    Training_Service_ID VARCHAR2(10) NOT NULL,
+    Service_Name VARCHAR2(35),
+    Customer_ID VARCHAR2(10),
+    Trainer_ID VARCHAR2(10),
+    PRIMARY KEY (Training_Service_ID),
+    FOREIGN KEY (Customer_ID) REFERENCES Customer(Customer_ID),
+    FOREIGN KEY (Trainer_ID) REFERENCES Trainer(Trainer_ID)
+);
+
+CREATE TABLE Training_Service_Details (
+    Service_Name VARCHAR2(35) NOT NULL,
+    Training_Service_Fee NUMBER(18,2),
+    PRIMARY KEY (Service_Name),
+    CONSTRAINT chk_training_service_fee CHECK (Training_Service_Fee >= 0)
+);
+
+CREATE TABLE Delivery_Services (
+    Delivery_ID VARCHAR2(11) NOT NULL,
+    Delivery_Method VARCHAR2(40),
+    Delivery_Date DATE,
+    Cost NUMBER(5,2),
+    Customer_ID VARCHAR2(10),
+    Adoption_ID VARCHAR2(11),
+    PRIMARY KEY (Delivery_ID),
+    FOREIGN KEY (Customer_ID) REFERENCES Customer(Customer_ID),
+    FOREIGN KEY (Adoption_ID) REFERENCES Adoption(Adoption_ID),
+    CONSTRAINT chk_delivery_cost CHECK (Cost >= 0)
+);
+
+CREATE TABLE Medical_Treatment (
+    Medical_Treatment_ID VARCHAR2(20) NOT NULL,
+    Medical_Name VARCHAR2(33),
+    Medical_Treatment_Cost NUMBER(20,2),
+    PRIMARY KEY (Medical_Treatment_ID),
+    CONSTRAINT chk_treatment_cost CHECK (Medical_Treatment_Cost >= 0)
+);
+
+CREATE TABLE Animal_Treatment (
+    Animal_Treatment_ID VARCHAR2(20) NOT NULL,
+    Treatment_Date DATE,
+    Medical_Treatment_ID VARCHAR2(20),
+    Animal_ID VARCHAR2(10),
+    PRIMARY KEY (Animal_Treatment_ID),
+    FOREIGN KEY (Medical_Treatment_ID) REFERENCES Medical_Treatment(Medical_Treatment_ID),
+    FOREIGN KEY (Animal_ID) REFERENCES Animal(Animal_ID)
+);
+
+CREATE TABLE Promotion (
+    Promotion_Code VARCHAR2(15) NOT NULL,
+    Start_Date DATE,
+    PRIMARY KEY (Promotion_Code),
+    CONSTRAINT chk_start_date CHECK (Start_Date IS NOT NULL)
+);
+
+CREATE TABLE Promotion_Details (
+    Start_Date DATE NOT NULL,
+    Expiration_Date DATE,
+    PRIMARY KEY (Start_Date),
+    CONSTRAINT chk_expiration_date CHECK (Expiration_Date >= Start_Date)
+);
+
+CREATE TABLE Payment (
+    Payment_ID VARCHAR2(10) NOT NULL,
+    Payment_Date DATE,
+    Payment_Method VARCHAR2(20),
+    Total_Price NUMBER(9,2),
+    Payment_Amount NUMBER(12,2),
+    Delivery_ID VARCHAR2(11),
+    Service_Name VARCHAR2(35),
+    Adoption_ID VARCHAR2(11),
+    Promotion_Code VARCHAR2(15),
+    PRIMARY KEY (Payment_ID),
+    FOREIGN KEY (Adoption_ID) REFERENCES Adoption(Adoption_ID),
+    FOREIGN KEY (Delivery_ID) REFERENCES Delivery_Services(Delivery_ID),
+    FOREIGN KEY (Service_Name) REFERENCES Training_Service_Details(Service_Name),
+    CONSTRAINT chk_total_price CHECK (Total_Price >= 0),
+    CONSTRAINT chk_payment_amount CHECK (Payment_Amount >= 0)
+);
+
+CREATE TABLE Donation (
+    Donation_ID VARCHAR2(10) NOT NULL,
+    Donor_Name VARCHAR2(25),
+    Donation_Amount NUMBER(18,2),
+    Donation_Date DATE,
+    Payment_Method VARCHAR2(20),
+    Shelter_ID VARCHAR2(10),
+    PRIMARY KEY (Donation_ID),
+    FOREIGN KEY (Shelter_ID) REFERENCES Shelter(Shelter_ID),
+    CONSTRAINT chk_donation_amount CHECK (Donation_Amount >= 0)
+);
+
+insert into Shelter values('SH001', 'Kuala Lumpur');
+insert into Shelter values('SH002', 'Johor Bahru');
+insert into Shelter values('SH003', 'George Town');
+insert into Shelter values('SH004', 'Ipoh');
+insert into Shelter values('SH005', 'Shah Alam');
+insert into Shelter values('SH006', 'Malacca');
+insert into Shelter values('SH007', 'Kota Kinabalu');
+insert into Shelter values('SH008', 'Kuching');
+insert into Shelter values('SH009', 'Alor Setar');
+insert into Shelter values('SH010', 'Seremban');
+
+insert into Animal values('AN001', 'Roxy', 'Dog', 3, 'Great Dane', 2021, 'P20240008', '09/12/2025', 'SH003');
+insert into Animal values('AN002', 'Sun', 'Cat', 6, 'Munchkin', 2018, NULL, NULL, 'SH010');
+insert into Animal values('AN003', 'Finn', 'Dog', 2, 'Yorkshire Terrier', 2022, 'P20240001', '30/09/2025', 'SH005');
+insert into Animal values('AN004', 'Lily', 'Cat', 5, 'Himalayan', 2019, 'P20240006', '19/11/2025', 'SH001');
+insert into Animal values('AN005', 'Riley', 'Dog', 7, 'Pug', 2017, 'P20240002', '10/10/2025', 'SH004');
+insert into Animal values('AN006', 'Sophie', 'Cat', 3, 'Russian Blue', 2021, 'P20240011', '05/01/2026', 'SH008');
+insert into Animal values('AN007', 'Jack', 'Dog', 4, 'Brittany', 2020, NULL, NULL, 'SH006');
+insert into Animal values('AN008', 'Misty', 'Cat', 6, 'Norwegian Forest', 2018, 'P20240003', '30/10/2025', 'SH007');
+insert into Animal values('AN009', 'Rexy', 'Dog', 5, 'Chihuahua', 2019, 'P20240005', '19/11/2025', 'SH004');
+insert into Animal values('AN010', 'Poppy', 'Cat', 2, 'Cornish Rex', 2022, NULL, NULL, 'SH009');
+insert into Animal values('AN011', 'Shadow', 'Dog', 3, 'Siberian Husky', 2021, 'P20240004', '05/11/2025', 'SH002');
+insert into Animal values('AN012', 'Nina', 'Cat', 7, 'Japanese Bobtail', 2017, 'P20240007', '25/11/2025', 'SH001');
+insert into Animal values('AN013', 'Daisy', 'Dog', 6, 'Rottweiler', 2018, NULL, NULL, 'SH007');
+insert into Animal values('AN014', 'Tinkerbell', 'Cat', 4, 'Singapura', 2020, 'P20240010', '28/12/2025', 'SH003');
+insert into Animal values('AN015', 'Rusty', 'Dog', 2, 'Australian Shepherd', 2022, 'P20240015', '11/02/2026', 'SH010');
+insert into Animal values('AN016', 'Lola', 'Cat', 3, 'Turkish Van', 2021, NULL, NULL, 'SH003');
+insert into Animal values('AN017', 'Chester', 'Dog', 5, 'Saint Bernard', 2019, NULL, NULL, 'SH005');
+insert into Animal values('AN018', 'Maggie', 'Cat', 8, 'American Curl', 2016, 'P20240009', '25/12/2025', 'SH008');
+insert into Animal values('AN019', 'Rudy', 'Dog', 4, 'Pomeranian', 2020, 'P20240013', '24/01/2026', 'SH010');
+insert into Animal values('AN020', 'Jasmine', 'Cat', 2, 'Selkirk Rex', 2022, NULL, NULL, 'SH001');
+insert into Animal values('AN021', 'Rex', 'Dog', 5, 'Labrador Retriever', 2019, 'P20240014', '08/02/2026', 'SH002');
+insert into Animal values('AN022', 'Whiskers', 'Cat', 3, 'Persian', 2021, 'P20240012', '12/01/2026', 'SH009');
+insert into Animal values('AN023', 'Buddy', 'Dog', 7, 'German Shepherd', 2017, NULL, NULL, 'SH007');
+insert into Animal values('AN024', 'Mittens', 'Cat', 2, 'Siamese', 2022, 'P20240018', '08/03/2026', 'SH002');
+insert into Animal values('AN025', 'Max', 'Dog', 4, 'Beagle', 2020, 'P20240016', '22/02/2026', 'SH006');
+insert into Animal values('AN026', 'Bella', 'Cat', 6, 'Maine Coon', 2018, NULL, NULL, 'SH004');
+insert into Animal values('AN027', 'Rocky', 'Dog', 8, 'Bulldog', 2016, 'P20240017', '27/02/2026', 'SH009');
+insert into Animal values('AN028', 'Sasha', 'Cat', 4, 'Bengal', 2020, 'P20240020', '19/03/2026', 'SH004');
+insert into Animal values('AN029', 'Charlie', 'Dog', 3, 'Poodle', 2021, NULL, NULL, 'SH001');
+insert into Animal values('AN030', 'Luna', 'Cat', 1, 'Scottish Fold', 2023, 'P20240019', '13/03/2026', 'SH003');
+insert into Animal values('AN031', 'Daisy', 'Dog', 2, 'Shih Tzu', 2022, NULL, NULL, 'SH010');
+insert into Animal values('AN032', 'Oliver', 'Cat', 5, 'Ragdoll', 2019, 'P20240021', '31/03/2026', 'SH003');
+insert into Animal values('AN033', 'Toby', 'Dog', 6, 'Schnauzer', 2018, 'P20240023', '12/04/2026', 'SH002');
+insert into Animal values('AN034', 'Maya', 'Cat', 3, 'British Shorthair', 2021, 'P20240024', '12/04/2026', 'SH009');
+insert into Animal values('AN035', 'Duke', 'Dog', 4, 'Cocker Spaniel', 2020, 'P20240022', '09/04/2026', 'SH005');
+insert into Animal values('AN036', 'Nala', 'Cat', 7, 'Abyssinian', 2016, NULL, NULL, 'SH006');
+insert into Animal values('AN037', 'Oscar', 'Dog', 5, 'Boxer', 2019, 'P20240026', '05/05/2026', 'SH005');
+insert into Animal values('AN038', 'Zara', 'Cat', 2, 'Sphynx', 2022, 'P20240025', '29/04/2026', 'SH004');
+insert into Animal values('AN039', 'Sam', 'Dog', 8, 'Dachshund', 2016, NULL, NULL, 'SH004');
+insert into Animal values('AN040', 'Cleo', 'Cat', 4, 'Turkish Angora', 2020, 'P20240028', '23/05/2026', 'SH007');
+insert into Animal values('AN041', 'Buster', 'Dog', 4, 'Golden Retriever', 2020, NULL, NULL, 'SH002');
+insert into Animal values('AN042', 'Pixie', 'Cat', 3, 'Birman', 2021, 'P20240027', '18/05/2026', 'SH004');
+insert into Animal values('AN043', 'Zeus', 'Dog', 7, 'Doberman Pinscher', 2017, NULL, NULL, 'SH006');
+insert into Animal values('AN044', 'Smokey', 'Cat', 2, 'Burmese', 2022, 'P20240029', '04/06/2026', 'SH007');
+insert into Animal values('AN045', 'Bruno', 'Dog', 5, 'Border Collie', 2019, NULL, NULL, 'SH008');
+insert into Animal values('AN046', 'Cinnamon', 'Cat', 4, 'Bengal', 2020, 'P20240030', '11/06/2026', 'SH009');
+insert into Animal values('AN047', 'Lenny', 'Cat', 2, 'Siberian', 2022, 'P20240032', '29/06/2026', 'SH005');
+insert into Animal values('AN048', 'Lucky', 'Dog', 3, 'Irish Terrier', 2021, 'P20240034', '19/07/2026', 'SH006');
+insert into Animal values('AN049', 'Hunter', 'Dog', 6, 'Weimaraner', 2018, 'P20240031', '29/06/2026', 'SH010');
+insert into Animal values('AN050', 'Yogurt', 'Cat', 3, 'Manx', 2021, 'P20240033', '10/07/2026', 'SH008');
+insert into Animal values('AN051', 'Soju', 'Dog', 5, 'Beagle', 2019, NULL, NULL, 'SH002');
+insert into Animal values('AN052', 'Patches', 'Cat', 4, 'Domestic Shorthair', 2020, 'P20240035', '25/07/2026', 'SH009');
+insert into Animal values('AN053', 'Clover', 'Cat', 2, 'Scottish Fold', 2022, 'P20240037', '14/08/2026', 'SH007');
+insert into Animal values('AN054', 'Chico', 'Dog', 3, 'Chihuahua', 2021, NULL, NULL, 'SH001');
+insert into Animal values('AN055', 'Scout', 'Dog', 7, 'English Setter', 2017, 'P20240036', '08/08/2026', 'SH005');
+insert into Animal values('AN056', 'Milo', 'Cat', 1, 'Devon Rex', 2023, 'P20240038', '22/08/2026', 'SH003');
+insert into Animal values('AN057', 'Maxwell', 'Dog', 4, 'Labradoodle', 2020, 'P20240040', '10/09/2026', 'SH008');
+insert into Animal values('AN058', 'Lulu', 'Cat', 5, 'Siamese', 2019, 'P20240039', '31/08/2026', 'SH010');
+insert into Animal values('AN059', 'Archer', 'Dog', 6, 'Rhodesian Ridgeback', 2018, NULL, NULL, 'SH004');
+insert into Animal values('AN060', 'Snowball', 'Cat', 3, 'Angora', 2021, NULL, NULL, 'SH006');
+
+
+insert into Customer values('CU001', 'Chan Hock Lee', '019-113-0438', 'chanhocklee@gmail.com', 'No. 19, Jalan Tun Razak, 50400 Kuala Lumpur', 33, 5500, 'No', 'Owned', 'Experienced');
+insert into Customer values('CU002', 'Ravi Kumar A/L Subramaniam', '017-751-8340', 'ravikumar@hotmail.com', 'No. 55, Taman Tun Dr Ismail, 60000 Kuala Lumpur', 31, 5300, 'Yes', 'Rental', 'No');
+insert into Customer values('CU003', 'Ahmad Faiz Bin Mohamed', '019-376-3064', 'ahmadfaiz@gmail.com', 'No. 12, Jalan Bukit Bintang, 55100 Kuala Lumpur', 35, 6500, 'Yes', 'Owned', 'No');
+insert into Customer values('CU004', 'Lee Hui Ying', '012-549-9918', 'leehuiying@yahoo.com', 'No. 10, Jalan Imbi, 55100 Kuala Lumpur', 27, 3600, 'Yes', 'Rental', 'Experienced');
+insert into Customer values('CU005', 'Wong Mei Yin', '013-418-7157', 'wongmeiyin@yahoo.com', 'No. 6, Taman Melawati, 53100 Kuala Lumpur', 31, 4500, 'No', 'Rental', 'No');
+insert into Customer values('CU006', 'Zulhilmi Ahmad Bin Idris', '011-769-1492', 'zulhilmiahmad@yahoo.com', 'No. 5, Jalan Duta, 50480 Kuala Lumpur', 29, 3900, 'No', 'Owned', 'Experienced');
+insert into Customer values('CU007', 'Vijay Narayanan A/L Ganesan', '011-339-5086', 'vijaynarayanan@hotmail.com', 'No. 7, Taman Sri Hartamas, 50480 Kuala Lumpur', 36, 6200, 'No', 'Rental', 'Experienced');
+insert into Customer values('CU008', 'Chan Wei Loon', '015-975-8983', 'chanweiloon@gmail.com', 'No. 11, Jalan Raja Chulan, 50200 Kuala Lumpur', 32, 4700, 'Yes', 'Owned', 'Experienced');
+insert into Customer values('CU009', 'Siti Aisyah Binti Abdullah', '016-515-8903', 'sitiaisyah@yahoo.com', 'No. 23, Jalan Pantai Baru, 59200 Kuala Lumpur', 42, 6200, 'Yes', 'Owned', 'No');
+insert into Customer values('CU010', 'Mohd Hafiz Bin Abdullah', '017-749-6251', 'mohdhafiz@gmail.com', 'No. 2, Jalan Melaka Raya, 75000 Melaka', 34, 4200, 'Yes', 'Owned', 'Experienced');
+insert into Customer values('CU011', 'Lim Chee Hong', '012-139-3055', 'limcheehong@gmail.com', 'No. 14, Jalan Cheras, 56000 Kuala Lumpur', 41, 5100, 'No', 'Owned', 'No');
+insert into Customer values('CU012', 'Mohd Faisal Bin Hamzah', '015-235-7484', 'mohdfaisal@gmail.com', 'No. 5, Jalan Bukit Damansara, 50490 Kuala Lumpur', 33, 4300, 'No', 'Rental', 'No');
+insert into Customer values('CU013', 'Tan Li Wen', '014-467-1712', 'tanliwen@hotmail.com', 'No. 12, Jalan Damansara, 60000 Kuala Lumpur', 29, 3500, 'Yes', 'Rental', 'No');
+insert into Customer values('CU014', 'Aminah Binti Abdullah', '019-442-0572', 'aminahabdullah@gmail.com', 'No. 45, Taman Desa, 58100 Kuala Lumpur', 38, 5900, 'Yes', 'Owned', 'No');
+insert into Customer values('CU015', 'Rani Subramaniam A/P Raju', '018-432-7763', 'ranisubramaniam@gmail.com', 'No. 20, Jalan Loke Yew, 55200 Kuala Lumpur', 39, 5800, 'Yes', 'Owned', 'Experienced');
+insert into Customer values('CU016', 'Lim Wei Ming', '016-580-3484', 'limweiming@yahoo.com', 'No. 8, Lorong Chan Sow Lin, 55200 Kuala Lumpur', 28, 3800, 'Yes', 'Rental', 'Experienced');
+insert into Customer values('CU017', 'Nurul Izzah Binti Hamid', '014-387-2673', 'nurulizzah@hotmail.com', 'No. 78, Jalan Bangsar, 59000 Kuala Lumpur', 25, 3700, 'No', 'Rental', 'Experienced');
+insert into Customer values('CU018', 'Rajesh Kumar A/L Palani', '013-222-5423', 'rajeshkumar@gmail.com', 'No. 11, Taman Perling, 81200 Johor Bahru', 44, 6700, 'Yes', 'Owned', 'No');
+insert into Customer values('CU019', 'Lim Siew Hoon', '012-562-0681', 'limsiewhoon@gmail.com', 'No. 18, Jalan Bukit Bintang, 55100 Kuala Lumpur', 30, 4600, 'No', 'Owned', 'Experienced');
+insert into Customer values('CU020', 'Nur Fatin Binti Mahmud', '011-432-3347', 'nurfatin@yahoo.com', 'No. 6, Jalan Kuchai Lama, 58200 Kuala Lumpur', 26, 3300, 'Yes', 'Rental', 'No');
+insert into Customer values('CU021', 'Tan Mei Ling', '014-608-0914', 'tanmeiling@gmail.com', 'No. 3, Jalan Ampang, 50450 Kuala Lumpur', 29, 4800, 'Yes', 'Owned', 'Experienced');
+insert into Customer values('CU022', 'Gopal Raj A/L Krishnan', '019-654-4711', 'gopalraj@hotmail.com', 'No. 10, Taman Desa, 58100 Kuala Lumpur', 45, 6500, 'No', 'Owned', 'Experienced');
+insert into Customer values('CU023', 'Priya Rani A/P Kandasamy', '018-594-6351', 'priyarani@gmail.com', 'No. 22, Jalan Pudu, 55100 Kuala Lumpur', 40, 5600, 'Yes', 'Rental', 'No');
+insert into Customer values('CU024', 'Surendran Raju A/L Siva', '017-749-6251', 'surendranraju@hotmail.com', 'No. 9, Taman Seputeh, 58000 Kuala Lumpur', 29, 6400, 'Yes', 'Rental', 'Experienced');
+insert into Customer values('CU025', 'Syed Muzaffar Bin Syed Jamal', '012-397-6279', 'syedmuzaffar@gmail.com', 'No. 2, Jalan Kinabalu, 50400 Kuala Lumpur', 30, 4000, 'No', 'Owned', 'No');
+insert into Customer values('CU026', 'Farah Nadiah Binti Rahman', '015-274-7097', 'farahnadiah@yahoo.com', 'No. 33, Taman Maluri, 55100 Kuala Lumpur', 42, 6000, 'Yes', 'Owned', 'No');
+insert into Customer values('CU027', 'Lim Kok Hing', '013-632-2095', 'limkokhing@gmail.com', 'No. 20, Jalan Bangsar South, 59200 Kuala Lumpur', 35, 5200, 'Yes', 'Owned', 'No');
+insert into Customer values('CU028', 'Suresh Nair A/L Maniam', '012-972-0439', 'sureshnair@hotmail.com', 'No. 16, Jalan Kerinchi, 59200 Kuala Lumpur', 38, 5500, 'No', 'Rental', 'Experienced');
+insert into Customer values('CU029', 'Mohd Akmal Bin Zahari', '019-886-3702', 'mohdakmal@gmail.com', 'No. 2, Jalan Ipoh, 51200 Kuala Lumpur', 35, 4600, 'No', 'Owned', 'Experienced');
+insert into Customer values('CU030', 'Lee Kian Seng', '017-297-0490', 'leekianseng@gmail.com', 'No. 7, Taman Desa, 58100 Kuala Lumpur', 28, 3600, 'No', 'Rental', 'No');
+
+insert into Adoption values('AD001', '30/09/2023', NULL, 'AN003', 'CU001');
+insert into Adoption values('AD002', '10/10/2023', NULL, 'AN005', 'CU002');
+insert into Adoption values('AD003', '30/10/2023', NULL, 'AN008', 'CU003');
+insert into Adoption values('AD004', '05/11/2023', NULL, 'AN011', 'CU005');
+insert into Adoption values('AD005', '19/11/2023', NULL, 'AN009', 'CU006');
+insert into Adoption values('AD006', '19/11/2023', NULL, 'AN004', 'CU007');
+insert into Adoption values('AD007', '25/11/2023', NULL, 'AN012', 'CU008');
+insert into Adoption values('AD008', '09/12/2023', NULL, 'AN001', 'CU009');
+insert into Adoption values('AD009', '25/12/2023', NULL, 'AN018', 'CU010');
+insert into Adoption values('AD010', '28/12/2023', NULL, 'AN014', 'CU011');
+insert into Adoption values('AD011', '05/01/2024', NULL, 'AN006', 'CU012');
+insert into Adoption values('AD012', '12/01/2024', NULL, 'AN022', 'CU003');
+insert into Adoption values('AD013', '24/01/2024', NULL, 'AN019', 'CU014');
+insert into Adoption values('AD014', '08/02/2024', NULL, 'AN021', 'CU006');
+insert into Adoption values('AD015', '11/02/2024', NULL, 'AN015', 'CU015');
+insert into Adoption values('AD016', '22/02/2024', NULL, 'AN025', 'CU016');
+insert into Adoption values('AD017', '27/02/2024', NULL, 'AN027', 'CU018');
+insert into Adoption values('AD018', '08/03/2024', NULL, 'AN024', 'CU019');
+insert into Adoption values('AD019', '13/03/2024', NULL, 'AN030', 'CU015');
+insert into Adoption values('AD020', '19/03/2024', NULL, 'AN028', 'CU011');
+insert into Adoption values('AD021', '31/03/2024', NULL, 'AN032', 'CU002');
+insert into Adoption values('AD022', '09/04/2024', NULL, 'AN035', 'CU021');
+insert into Adoption values('AD023', '12/04/2024', NULL, 'AN033', 'CU003');
+insert into Adoption values('AD024', '12/04/2024', NULL, 'AN034', 'CU022');
+insert into Adoption values('AD025', '29/04/2024', NULL, 'AN038', 'CU007');
+insert into Adoption values('AD026', '05/05/2024', NULL, 'AN037', 'CU023');
+insert into Adoption values('AD027', '18/05/2024', NULL, 'AN042', 'CU024');
+insert into Adoption values('AD028', '23/05/2024', NULL, 'AN040', 'CU006');
+insert into Adoption values('AD029', '04/06/2024', NULL, 'AN044', 'CU014');
+insert into Adoption values('AD030', '11/06/2024', NULL, 'AN046', 'CU025');
+insert into Adoption values('AD031', '29/06/2024', NULL, 'AN049', 'CU026');
+insert into Adoption values('AD032', '29/06/2024', NULL, 'AN047', 'CU026');
+insert into Adoption values('AD033', '10/07/2024', NULL, 'AN050', 'CU021');
+insert into Adoption values('AD034', '19/07/2024', NULL, 'AN048', 'CU009');
+insert into Adoption values('AD035', '25/07/2024', NULL, 'AN052', 'CU022');
+insert into Adoption values('AD036', '08/08/2024', NULL, 'AN055', 'CU027');
+insert into Adoption values('AD037', '14/08/2024', NULL, 'AN053', 'CU018');
+insert into Adoption values('AD038', '22/08/2024', NULL, 'AN056', 'CU028');
+insert into Adoption values('AD039', '31/08/2024', NULL, 'AN058', 'CU001');
+insert into Adoption values('AD040', '10/09/2024', NULL, 'AN057', 'CU029');
+
+
+insert into Adoption_Counselor values('AC001', 'Samuel Tan Yu Heng');
+insert into Adoption_Counselor values('AC002', 'Racheal Foo Xin Yu');
+insert into Adoption_Counselor values('AC003', 'Agnes Lee Xin');
+insert into Adoption_Counselor values('AC004', 'Amira binti Fadli');
+insert into Adoption_Counselor values('AC005', 'Rosli binti Taufik');
+insert into Adoption_Counselor values('AC006', 'Koh En Xi');
+insert into Adoption_Counselor values('AC007', 'Ravi Kumar Selvam');
+insert into Adoption_Counselor values('AC008', 'Sofia binti Sahmat');
+insert into Adoption_Counselor values('AC009', 'Farhan bin Azhar');
+insert into Adoption_Counselor values('AC010', 'Safwan bin Rizal');
+insert into Adoption_Counselor values('AC011', 'Tan Jason');
+insert into Adoption_Counselor values('AC012', 'Evelyn Gan Jia Ning');
+insert into Adoption_Counselor values('AC013', 'Tan Jia Jun');
+insert into Adoption_Counselor values('AC014', 'James Chia Han Hao');
+insert into Adoption_Counselor values('AC015', 'Sonia Devi Sharma');
+
+
+insert into Application values('CUP001', '24/09/2023', 'Accepted', 'AC003', 'CU001');
+insert into Application values('CUP002', '03/10/2023', 'Accepted', 'AC006', 'CU002'); 
+insert into Application values('CUP003', '20/10/2023', 'Rejected', 'AC001', 'CU017');
+insert into Application values('CUP004', '23/10/2023', 'Accepted', 'AC004', 'CU003');
+insert into Application values('CUP005', '29/10/2023', 'Accepted', 'AC005', 'CU005');
+insert into Application values('CUP006', '01/11/2023', 'Rejected', 'AC004', 'CU020');
+insert into Application values('CUP007', '07/11/2023', 'Rejected', 'AC006', 'CU013');
+insert into Application values('CUP008', '12/11/2023', 'Accepted', 'AC002', 'CU006');
+insert into Application values('CUP009', '12/11/2023', 'Accepted', 'AC001', 'CU007');
+insert into Application values('CUP010', '18/11/2023', 'Accepted', 'AC008', 'CU008');
+insert into Application values('CUP011', '02/12/2023', 'Accepted', 'AC009', 'CU009');
+insert into Application values('CUP012', '18/12/2023', 'Accepted', 'AC003', 'CU010');
+insert into Application values('CUP013', '21/12/2023', 'Accepted', 'AC003', 'CU011');
+insert into Application values('CUP014', '22/12/2023', 'Rejected', 'AC013', 'CU030');
+insert into Application values('CUP015', '26/12/2023', 'Rejected', 'AC004', 'CU004');
+insert into Application values('CUP016', '29/12/2023', 'Accepted', 'AC007', 'CU012');
+insert into Application values('CUP017', '05/01/2024', 'Accepted', 'AC007', 'CU003');
+insert into Application values('CUP018', '17/01/2024', 'Accepted', 'AC002', 'CU014');
+insert into Application values('CUP019', '01/02/2024', 'Accepted', 'AC003', 'CU006');
+insert into Application values('CUP020', '02/02/2024', 'Rejected', 'AC005', 'CU020');
+insert into Application values('CUP021', '04/02/2024', 'Accepted', 'AC011', 'CU015');
+insert into Application values('CUP022', '15/02/2024', 'Accepted', 'AC011', 'CU016');
+insert into Application values('CUP023', '20/02/2024', 'Accepted', 'AC004', 'CU018');
+insert into Application values('CUP024', '01/03/2024', 'Accepted', 'AC014', 'CU019');
+insert into Application values('CUP025', '06/03/2024', 'Accepted', 'AC013', 'CU015');
+insert into Application values('CUP026', '12/03/2024', 'Accepted', 'AC001', 'CU011');
+insert into Application values('CUP027', '24/03/2024', 'Accepted', 'AC015', 'CU002');
+insert into Application values('CUP028', '29/03/2024', 'Rejected', 'AC003', 'CU030');
+insert into Application values('CUP029', '02/04/2024', 'Accepted', 'AC003', 'CU021');
+insert into Application values('CUP030', '05/04/2024', 'Accepted', 'AC008', 'CU003');
+insert into Application values('CUP031', '05/04/2024', 'Accepted', 'AC010', 'CU022');
+insert into Application values('CUP032', '10/04/2024', 'Rejected', 'AC015', 'CU017');
+insert into Application values('CUP033', '22/04/2024', 'Accepted', 'AC012', 'CU007');
+insert into Application values('CUP034', '28/04/2024', 'Accepted', 'AC011', 'CU023');
+insert into Application values('CUP035', '11/05/2024', 'Accepted', 'AC010', 'CU024');
+insert into Application values('CUP036', '16/05/2024', 'Accepted', 'AC009', 'CU006');
+insert into Application values('CUP037', '28/05/2024', 'Accepted', 'AC007', 'CU014');
+insert into Application values('CUP038', '04/06/2024', 'Accepted', 'AC013', 'CU025');
+insert into Application values('CUP039', '18/06/2024', 'Rejected', 'AC006', 'CU004');
+insert into Application values('CUP040', '22/06/2024', 'Accepted', 'AC011', 'CU026');
+insert into Application values('CUP041', '22/06/2024', 'Accepted', 'AC011', 'CU026');
+insert into Application values('CUP042', '03/07/2024', 'Accepted', 'AC004', 'CU021');
+insert into Application values('CUP043', '12/07/2024', 'Accepted', 'AC014', 'CU009');
+insert into Application values('CUP044', '18/07/2024', 'Accepted', 'AC013', 'CU022');
+insert into Application values('CUP045', '01/08/2024', 'Accepted', 'AC012', 'CU027');
+insert into Application values('CUP046', '07/08/2024', 'Accepted', 'AC015', 'CU018');
+insert into Application values('CUP047', '15/08/2024', 'Accepted', 'AC013', 'CU028');
+insert into Application values('CUP048', '24/08/2024', 'Accepted', 'AC001', 'CU001');
+insert into Application values('CUP049', '03/09/2024', 'Accepted', 'AC015', 'CU029');
+insert into Application values('CUP050', '05/09/2024', 'Rejected', 'AC012', 'CU030');
+
+insert into Trainer values('TR001', 'John Doe', '019-123-4567', 'johndoe@gmail.com', 'Advanced');
+insert into Trainer values('TR002', 'Jane Smith', '018-876-5432', 'janesmith@yahoo.com', 'Intermediate');
+insert into Trainer values('TR003', 'Michael Tan', '012-345-6789', 'michaeltan@hotmail.com', 'Beginner');
+insert into Trainer values('TR004', 'Emily Wong', '017-543-2109', 'emilywong@gmail.com', 'Advanced');
+insert into Trainer values('TR005', 'Ahmad Zaki', '016-987-6543', 'ahmadzaki@gmail.com', 'Intermediate');
+insert into Trainer values('TR006', 'Ravi Kumar', '011-234-5678', 'ravikumar@gmail.com', 'Beginner');
+insert into Trainer values('TR007', 'Lina Chen', '013-876-4321', 'linachen@hotmail.com', 'Advanced');
+insert into Trainer values('TR008', 'Aisyah Binti Mohamad', '010-345-6789', 'aisyahbm@gmail.com', 'Intermediate');
+insert into Trainer values('TR009', 'Vijay Narayan', '019-654-3210', 'vijaynarayan@yahoo.com', 'Beginner');
+insert into Trainer values('TR010', 'Fiona Lau', '014-543-2108', 'fionalau@gmail.com', 'Advanced');
+insert into Trainer values('TR011', 'Rajesh Kannan', '011-234-9876', 'rajeshk@gmail.com', 'Intermediate');
+insert into Trainer values('TR012', 'Maya Singh', '012-987-6541', 'mayasingh@gmail.com', 'Advanced');
+insert into Trainer values('TR013', 'Nurul Huda', '016-234-5671', 'nurulhuda@gmail.com', 'Beginner');
+insert into Trainer values('TR014', 'Liu Wei', '019-876-5431', 'liuwei@gmail.com', 'Intermediate');
+insert into Trainer values('TR015', 'Zul Ahmad', '017-345-6781', 'zulahmad@hotmail.com', 'Advanced');
+insert into Trainer values('TR016', 'Chong Ming', '018-543-2107', 'chongming@yahoo.com', 'Intermediate');
+insert into Trainer values('TR017', 'Farah Abdullah', '010-987-6541', 'farahabdullah@gmail.com', 'Beginner');
+insert into Trainer values('TR018', 'Henry Goh', '012-765-4321', 'henrygoh@hotmail.com', 'Advanced');
+insert into Trainer values('TR019', 'Syed Ali', '019-321-6547', 'syedali@gmail.com', 'Intermediate');
+insert into Trainer values('TR020', 'Lim Siew Fong', '013-654-3219', 'limsiewfong@gmail.com', 'Beginner');
+insert into Trainer values('TR021', 'Nina Ong', '014-765-4329', 'ninaong@gmail.com', 'Advanced');
+insert into Trainer values('TR022', 'Aiman Yusof', '011-567-4321', 'aimanyusof@gmail.com', 'Intermediate');
+insert into Trainer values('TR023', 'Mei Ling Tan', '016-543-7891', 'meilingtan@yahoo.com', 'Beginner');
+insert into Trainer values('TR024', 'Karthik Raj', '018-876-5439', 'karthikraj@hotmail.com', 'Advanced');
+insert into Trainer values('TR025', 'Rosnah Rahman', '012-987-5432', 'rosnahrahman@gmail.com', 'Intermediate');
+insert into Trainer values('TR026', 'Azman Ishak', '015-654-3210', 'azmanishak@yahoo.com', 'Beginner');
+insert into Trainer values('TR027', 'Wei Hong Lee', '017-876-4329', 'weihonglee@gmail.com', 'Intermediate');
+insert into Trainer values('TR028', 'Shamila Rani', '019-987-6542', 'shamilarani@gmail.com', 'Advanced');
+insert into Trainer values('TR029', 'Peter Lim', '010-654-9876', 'peterlim@hotmail.com', 'Intermediate');
+insert into Trainer values('TR030', 'Michelle Tan', '014-234-8765', 'michelletan@gmail.com', 'Advanced');
+
+
+insert into Training_Service values('TS001', 'Heel training', 'CU018', 'TR001');
+insert into Training_Service values('TS002', 'Potty training', 'CU015', 'TR006');
+insert into Training_Service values('TS003', 'Protection training for large dogs', 'CU006', 'TR003');
+insert into Training_Service values('TS004', 'Advanced commands training', 'CU025', 'TR015');
+insert into Training_Service values('TS005', 'Digging prevention training', 'CU019', 'TR005');
+insert into Training_Service values('TS006', 'Puppy manners training', 'CU011', 'TR006');
+insert into Training_Service values('TS007', 'Potty training for adult dogs', 'CU027', 'TR007');
+insert into Training_Service values('TS008', 'Separation anxiety training', 'CU011', 'TR008');
+insert into Training_Service values('TS009', 'Guard dog training', 'CU025', 'TR009');
+insert into Training_Service values('TS010', 'Scent detection training', 'CU029', 'TR010');
+insert into Training_Service values('TS011', 'Heel training', 'CU029', 'TR011');
+insert into Training_Service values('TS012', 'Protection training', 'CU025', 'TR012');
+insert into Training_Service values('TS013', 'Potty training for adult dogs', 'CU003', 'TR013');
+insert into Training_Service values('TS014', 'Potty training', 'CU021', 'TR014');
+insert into Training_Service values('TS015', 'Herding dog training', 'CU002', 'TR015');
+insert into Training_Service values('TS016', 'Scent detection training', 'CU019', 'TR016');
+insert into Training_Service values('TS017', 'Advanced commands training', 'CU011', 'TR017');
+insert into Training_Service values('TS018', 'Protection training', 'CU007', 'TR018');
+insert into Training_Service values('TS019', 'Separation anxiety training', 'CU027', 'TR019');
+insert into Training_Service values('TS020', 'Guard dog training', 'CU003', 'TR020');
+insert into Training_Service values('TS021', 'Digging prevention training', 'CU029', 'TR021');
+insert into Training_Service values('TS022', 'Positive reinforcement training', 'CU003', 'TR022');
+insert into Training_Service values('TS023', 'Puppy manners training', 'CU006', 'TR023');
+insert into Training_Service values('TS024', 'Destructive chewing training', 'CU015', 'TR024');
+insert into Training_Service values('TS025', 'Heel training', 'CU008', 'TR025');
+insert into Training_Service values('TS026', 'Fear and anxiety management', 'CU021', 'TR026');
+insert into Training_Service values('TS027', 'Positive reinforcement training', 'CU019', 'TR027');
+insert into Training_Service values('TS028', 'Potty training', 'CU008', 'TR028');
+insert into Training_Service values('TS029', 'Separation anxiety training', 'CU007', 'TR029');
+insert into Training_Service values('TS030', 'Stay and wait training', 'CU015', 'TR030');
+insert into Training_Service values('TS031', 'Stay and wait training', 'CU021', 'TR001');
+insert into Training_Service values('TS032', 'Sit and down training', 'CU011', 'TR002');
+insert into Training_Service values('TS033', 'Recall training for hunting dogs', 'CU011', 'TR003');
+insert into Training_Service values('TS034', 'Crate training', 'CU006', 'TR004');
+insert into Training_Service values('TS035', 'Crate training', 'CU022', 'TR005');
+
+
+insert into Training_Service_Details values('Potty training', '350');
+insert into Training_Service_Details values('Obedience training', '500');
+insert into Training_Service_Details values('Protection training', '1500');
+insert into Training_Service_Details values('Agility training', '700');
+insert into Training_Service_Details values('Leash training', '300');
+insert into Training_Service_Details values('Crate training', '300');
+insert into Training_Service_Details values('Socialization training', '400');
+insert into Training_Service_Details values('Puppy manners training', '400');
+insert into Training_Service_Details values('Basic commands training', '550'); 
+insert into Training_Service_Details values('Advanced commands training', '900');
+insert into Training_Service_Details values('Housebreaking training', '500');
+insert into Training_Service_Details values('Bark control training', '500');
+insert into Training_Service_Details values('Recall training', '600');
+insert into Training_Service_Details values('Stay and wait training', '500');
+insert into Training_Service_Details values('Sit and down training', '300');
+insert into Training_Service_Details values('Off-leash training', '1000');
+insert into Training_Service_Details values('Heel training', '500');
+insert into Training_Service_Details values('Jump control training', '300');
+insert into Training_Service_Details values('Dog-to-dog aggression training', '1000');
+insert into Training_Service_Details values('Separation anxiety training', '800');
+insert into Training_Service_Details values('Potty training for adult dogs', '400');
+insert into Training_Service_Details values('Obedience training for puppies', '550'); 
+insert into Training_Service_Details values('Guard dog training', '1800');
+insert into Training_Service_Details values('Therapy dog training', '1200');
+insert into Training_Service_Details values('Canine good citizen training', '1000');
+insert into Training_Service_Details values('Leash aggression training', '800');
+insert into Training_Service_Details values('Protection training for large dogs', '2200');
+insert into Training_Service_Details values('Puppy biting control', '450');
+insert into Training_Service_Details values('Destructive chewing training', '500');
+insert into Training_Service_Details values('Fear and anxiety management', '850');
+insert into Training_Service_Details values('Digging prevention training', '500');
+insert into Training_Service_Details values('Basic obedience for senior dogs', '600');
+insert into Training_Service_Details values('High-energy dog training', '800');
+insert into Training_Service_Details values('Recall training for hunting dogs', '800');
+insert into Training_Service_Details values('Tracking training', '1200');
+insert into Training_Service_Details values('Scent detection training', '1300');
+insert into Training_Service_Details values('Off-leash recall training', '1000'); 
+insert into Training_Service_Details values('Herding dog training', '1100');
+insert into Training_Service_Details values('Positive reinforcement training', '600');
+insert into Training_Service_Details values('Advanced protection training', '3000');
+
+
+insert into Delivery_Services values('DS001', 'Home Delivery Specialized Pet Vehicle', '10/10/2023', 50.00, 'CU002', 'AD002');
+insert into Delivery_Services values('DS002', 'Home Delivery Specialized Pet Vehicle', '30/10/2023', 50.00, 'CU003', 'AD003');
+insert into Delivery_Services values('DS003', 'Home Delivery Specialized Pet Vehicle', '05/11/2023', 50.00, 'CU005', 'AD004');
+insert into Delivery_Services values('DS004', 'Courier Service Pet Transporter', '25/11/2023', 60.00, 'CU008', 'AD007');
+insert into Delivery_Services values('DS005', 'Home Delivery Pet Taxi', '09/12/2023', 45.00, 'CU009', 'AD008');
+insert into Delivery_Services values('DS006', 'Courier Service Pet Transporter', '15/12/2023', 60.00, 'CU010', 'AD009');
+insert into Delivery_Services values('DS007', 'Home Delivery Pet Taxi', '28/12/2023', 45.00, 'CU011', 'AD010');
+insert into Delivery_Services values('DS008', 'Home Delivery Specialized Pet Vehicle', '12/01/2024', 50.00, 'CU003', 'AD012');
+insert into Delivery_Services values('DS009', 'Courier Service Pet Transporter', '08/02/2024', 60.00, 'CU006', 'AD014');
+insert into Delivery_Services values('DS010', 'Home Delivery Pet Taxi', '11/02/2024', 45.00, 'CU015', 'AD015');
+insert into Delivery_Services values('DS011', 'Courier Service Pet Transporter', '22/02/2024', 60.00, 'CU016', 'AD016');
+insert into Delivery_Services values('DS012', 'Home Delivery Specialized Pet Vehicle', '08/03/2024', 50.00, 'CU019', 'AD018');
+insert into Delivery_Services values('DS013', 'Courier Service Pet Transporter', '19/03/2024', 60.00, 'CU011', 'AD020');
+insert into Delivery_Services values('DS014', 'Home Delivery Specialized Pet Vehicle', '31/03/2024', 50.00, 'CU002', 'AD021');
+insert into Delivery_Services values('DS015', 'Home Delivery Pet Taxi', '09/04/2024', 45.00, 'CU021', 'AD022');
+insert into Delivery_Services values('DS016', 'Courier Service Pet Transporter', '12/04/2024', 60.00, 'CU003', 'AD023');
+insert into Delivery_Services values('DS017', 'Home Delivery Specialized Pet Vehicle', '29/04/2024', 50.00, 'CU007', 'AD025');
+insert into Delivery_Services values('DS018', 'Courier Service Pet Transporter', '05/05/2024', 60.00, 'CU023', 'AD026');
+insert into Delivery_Services values('DS019', 'Home Delivery Pet Taxi', '12/05/2024', 45.00, 'CU024', 'AD027');
+insert into Delivery_Services values('DS020', 'Courier Service Pet Transporter', '23/05/2024', 60.00, 'CU006', 'AD028');
+insert into Delivery_Services values('DS021', 'Home Delivery Specialized Pet Vehicle', '04/06/2024', 50.00, 'CU014', 'AD029');
+insert into Delivery_Services values('DS022', 'Home Delivery Pet Taxi', '11/06/2024', 45.00, 'CU025', 'AD030');
+insert into Delivery_Services values('DS023', 'Courier Service Pet Transporter', '29/06/2024', 60.00, 'CU026', 'AD031');
+insert into Delivery_Services values('DS024', 'Home Delivery Specialized Pet Vehicle', '10/07/2024', 50.00, 'CU009', 'AD033');
+insert into Delivery_Services values('DS025', 'Home Delivery Pet Taxi', '19/07/2024', 45.00, 'CU022', 'AD034');
+insert into Delivery_Services values('DS026', 'Courier Service Pet Transporter', '25/07/2024', 60.00, 'CU027', 'AD035');
+insert into Delivery_Services values('DS027', 'Home Delivery Specialized Pet Vehicle', '03/08/2024', 50.00, 'CU018', 'AD036');
+insert into Delivery_Services values('DS028', 'Home Delivery Pet Taxi', '22/08/2024', 45.00, 'CU001', 'AD038');
+insert into Delivery_Services values('DS029', 'Courier Service Pet Transporter', '31/08/2024', 60.00, 'CU029', 'AD039');
+insert into Delivery_Services values('DS030', 'Home Delivery Specialized Pet Vehicle', '10/09/2024', 50.00, 'CU026', 'AD040');
+
+
+insert into Medical_Treatment values('MT001', 'Neuter', 300); 
+insert into Medical_Treatment values('MT002', 'Vaccination', 250); 
+insert into Medical_Treatment values('MT003', 'Deworming', 120); 
+insert into Medical_Treatment values('MT004', 'Antibiotics', 70); 
+insert into Medical_Treatment values('MT005', 'Anti-inflammatory drugs', 70); 
+insert into Medical_Treatment values('MT006', 'Flea and tick prevention', 90); 
+insert into Medical_Treatment values('MT007', 'Heartworm prevention', 50); 
+insert into Medical_Treatment values('MT008', 'Anticholinergic drugs', 50); 
+insert into Medical_Treatment values('MT009', 'Antifungal treatments', 80); 
+insert into Medical_Treatment values('MT010', 'Allergy relief', 40);
+insert into Medical_Treatment values('MT011', 'Topical wound care', 60); 
+insert into Medical_Treatment values('MT012', 'Ear infection treatment', 40); 
+insert into Medical_Treatment values('MT013', 'Eye infection treatment', 60); 
+insert into Medical_Treatment values('MT014', 'Anti-anxiety medications', 90); 
+insert into Medical_Treatment values('MT015', 'Seizure control', 100); 
+insert into Medical_Treatment values('MT016', 'Thyroid hormone', 70); 
+insert into Medical_Treatment values('MT017', 'Insulin therapy', 150); 
+insert into Medical_Treatment values('MT018', 'Joint supplements', 110); 
+insert into Medical_Treatment values('MT019', 'Steroid treatment', 50); 
+insert into Medical_Treatment values('MT020', 'Probiotics', 50); 
+insert into Medical_Treatment values('MT021', 'Electrolyte solutions', 40); 
+insert into Medical_Treatment values('MT022', 'Fluid therapy', 180); 
+insert into Medical_Treatment values('MT023', 'Blood transfusion', 500); 
+insert into Medical_Treatment values('MT024', 'Chemotherapy drugs', 500); 
+insert into Medical_Treatment values('MT025', 'Anti-nausea medications', 70); 
+insert into Medical_Treatment values('MT026', 'Appetite stimulants', 70); 
+insert into Medical_Treatment values('MT027', 'Antidiarrheal treatments', 60); 
+insert into Medical_Treatment values('MT028', 'Anti-vomiting drugs', 40); 
+insert into Medical_Treatment values('MT029', 'Dental care products', 50); 
+insert into Medical_Treatment values('MT030', 'Surgical wound care', 50); 
+insert into Medical_Treatment values('MT031', 'Urinary tract infection treatment', 60); 
+insert into Medical_Treatment values('MT032', 'Anticoagulants', 100); 
+insert into Medical_Treatment values('MT033', 'Liver support supplements', 100); 
+insert into Medical_Treatment values('MT034', 'Dermatological treatments', 50); 
+insert into Medical_Treatment values('MT035', 'Obesity management', 150); 
+insert into Medical_Treatment values('MT036', 'Chronic kidney disease management', 150); 
+insert into Medical_Treatment values('MT037', 'Asthma treatment', 80); 
+insert into Medical_Treatment values('MT038', 'Respiratory infection treatment', 60); 
+insert into Medical_Treatment values('MT039', 'Anti-inflammatory eye drops', 60); 
+insert into Medical_Treatment values('MT040', 'Pain relief patches', 200);
+insert into Medical_Treatment values('MT041', 'Cough suppressants', 50); 
+insert into Medical_Treatment values('MT042', 'Immune-suppressing drugs', 200); 
+insert into Medical_Treatment values('MT043', 'Cancer immunotherapy', 1000); 
+insert into Medical_Treatment values('MT044', 'Anticonvulsants', 100); 
+insert into Medical_Treatment values('MT045', 'Weight loss medications', 200); 
+insert into Medical_Treatment values('MT046', 'Oxygen therapy', 300); 
+insert into Medical_Treatment values('MT047', 'Heatstroke treatment', 200); 
+insert into Medical_Treatment values('MT048', 'Post-surgical analgesics', 60); 
+insert into Medical_Treatment values('MT049', 'Rehabilitation therapy', 150);
+
+
+insert into Animal_Treatment values('AT001', '01/09/2023', 'MT001', 'AN001'); 
+insert into Animal_Treatment values('AT002', '01/09/2023', 'MT002', 'AN001'); 
+insert into Animal_Treatment values('AT003', '01/09/2023', 'MT003', 'AN001');  
+insert into Animal_Treatment values('AT004', '02/09/2023', 'MT020', 'AN001'); 
+insert into Animal_Treatment values('AT005', '02/09/2023', 'MT001', 'AN002'); 
+insert into Animal_Treatment values('AT006', '02/09/2023', 'MT002', 'AN002'); 
+insert into Animal_Treatment values('AT007', '02/09/2023', 'MT003', 'AN002'); 
+insert into Animal_Treatment values('AT008', '03/09/2023', 'MT001', 'AN003'); 
+insert into Animal_Treatment values('AT009', '03/09/2023', 'MT002', 'AN003'); 
+insert into Animal_Treatment values('AT010', '03/09/2023', 'MT003', 'AN003');
+insert into Animal_Treatment values('AT011', '06/09/2023', 'MT026', 'AN003'); 
+insert into Animal_Treatment values('AT012', '09/09/2023', 'MT001', 'AN004'); 
+insert into Animal_Treatment values('AT013', '09/09/2023', 'MT002', 'AN004'); 
+insert into Animal_Treatment values('AT014', '09/09/2023', 'MT003', 'AN004'); 
+insert into Animal_Treatment values('AT015', '12/09/2023', 'MT010', 'AN003'); 
+insert into Animal_Treatment values('AT016', '16/09/2023', 'MT001', 'AN005'); 
+insert into Animal_Treatment values('AT017', '16/09/2023', 'MT002', 'AN005'); 
+insert into Animal_Treatment values('AT018', '16/09/2023', 'MT003', 'AN005'); 
+insert into Animal_Treatment values('AT019', '22/09/2023', 'MT027', 'AN004');
+insert into Animal_Treatment values('AT020', '27/09/2023', 'MT001', 'AN006'); 
+insert into Animal_Treatment values('AT021', '27/09/2023', 'MT002', 'AN006'); 
+insert into Animal_Treatment values('AT022', '27/09/2023', 'MT003', 'AN006'); 
+insert into Animal_Treatment values('AT023', '02/10/2023', 'MT001', 'AN007'); 
+insert into Animal_Treatment values('AT024', '02/10/2023', 'MT002', 'AN007'); 
+insert into Animal_Treatment values('AT025', '02/10/2023', 'MT003', 'AN007'); 
+insert into Animal_Treatment values('AT026', '04/10/2023', 'MT047', 'AN007'); 
+insert into Animal_Treatment values('AT027', '06/10/2023', 'MT001', 'AN008'); 
+insert into Animal_Treatment values('AT028', '06/10/2023', 'MT002', 'AN008'); 
+insert into Animal_Treatment values('AT029', '06/10/2023', 'MT003', 'AN008'); 
+insert into Animal_Treatment values('AT030', '06/10/2023', 'MT025', 'AN008'); 
+insert into Animal_Treatment values('AT031', '12/10/2023', 'MT001', 'AN009'); 
+insert into Animal_Treatment values('AT032', '12/10/2023', 'MT002', 'AN009'); 
+insert into Animal_Treatment values('AT033', '12/10/2023', 'MT003', 'AN009');  
+insert into Animal_Treatment values('AT034', '15/10/2023', 'MT015', 'AN008'); 
+insert into Animal_Treatment values('AT035', '20/10/2023', 'MT001', 'AN010'); 
+insert into Animal_Treatment values('AT036', '20/10/2023', 'MT002', 'AN010'); 
+insert into Animal_Treatment values('AT037', '20/10/2023', 'MT003', 'AN010'); 
+insert into Animal_Treatment values('AT038', '20/10/2023', 'MT031', 'AN010');  
+insert into Animal_Treatment values('AT039', '23/10/2023', 'MT005', 'AN009');
+insert into Animal_Treatment values('AT040', '24/10/2023', 'MT001', 'AN011'); 
+insert into Animal_Treatment values('AT041', '24/10/2023', 'MT002', 'AN011'); 
+insert into Animal_Treatment values('AT042', '24/10/2023', 'MT003', 'AN011'); 
+insert into Animal_Treatment values('AT043', '24/10/2023', 'MT032', 'AN011'); 
+insert into Animal_Treatment values('AT044', '05/11/2023', 'MT015', 'AN001'); 
+insert into Animal_Treatment values('AT045', '08/11/2023', 'MT001', 'AN012'); 
+insert into Animal_Treatment values('AT046', '08/11/2023', 'MT002', 'AN012'); 
+insert into Animal_Treatment values('AT047', '08/11/2023', 'MT003', 'AN012'); 
+insert into Animal_Treatment values('AT048', '11/11/2023', 'MT014', 'AN012'); 
+insert into Animal_Treatment values('AT049', '13/11/2023', 'MT001', 'AN013');
+insert into Animal_Treatment values('AT050', '13/11/2023', 'MT002', 'AN013'); 
+insert into Animal_Treatment values('AT051', '13/11/2023', 'MT003', 'AN013'); 
+insert into Animal_Treatment values('AT052', '15/11/2023', 'MT001', 'AN014'); 
+insert into Animal_Treatment values('AT053', '15/11/2023', 'MT002', 'AN014'); 
+insert into Animal_Treatment values('AT054', '15/11/2023', 'MT003', 'AN014'); 
+insert into Animal_Treatment values('AT055', '16/11/2023', 'MT028', 'AN013'); 
+insert into Animal_Treatment values('AT056', '17/11/2023', 'MT006', 'AN012'); 
+insert into Animal_Treatment values('AT057', '23/11/2023', 'MT001', 'AN015'); 
+insert into Animal_Treatment values('AT058', '23/11/2023', 'MT002', 'AN015');
+insert into Animal_Treatment values('AT059', '23/11/2023', 'MT003', 'AN015'); 
+insert into Animal_Treatment values('AT060', '27/11/2023', 'MT001', 'AN016'); 
+insert into Animal_Treatment values('AT061', '27/11/2023', 'MT002', 'AN016'); 
+insert into Animal_Treatment values('AT062', '27/11/2023', 'MT003', 'AN016'); 
+insert into Animal_Treatment values('AT063', '28/11/2023', 'MT008', 'AN015'); 
+insert into Animal_Treatment values('AT064', '06/12/2023', 'MT042', 'AN016'); 
+insert into Animal_Treatment values('AT065', '06/12/2023', 'MT001', 'AN017'); 
+insert into Animal_Treatment values('AT066', '06/12/2023', 'MT002', 'AN017'); 
+insert into Animal_Treatment values('AT067', '06/12/2023', 'MT003', 'AN017'); 
+insert into Animal_Treatment values('AT068', '08/12/2023', 'MT042', 'AN006'); 
+insert into Animal_Treatment values('AT069', '10/12/2023', 'MT001', 'AN018'); 
+insert into Animal_Treatment values('AT070', '10/12/2023', 'MT002', 'AN018');
+insert into Animal_Treatment values('AT071', '10/12/2023', 'MT003', 'AN018');
+insert into Animal_Treatment values('AT072', '13/12/2023', 'MT001', 'AN019'); 
+insert into Animal_Treatment values('AT073', '13/12/2023', 'MT002', 'AN019'); 
+insert into Animal_Treatment values('AT074', '13/12/2023', 'MT003', 'AN019'); 
+insert into Animal_Treatment values('AT075', '16/12/2023', 'MT032', 'AN019');
+insert into Animal_Treatment values('AT076', '17/12/2023', 'MT014', 'AN019'); 
+insert into Animal_Treatment values('AT077', '20/12/2023', 'MT001', 'AN020'); 
+insert into Animal_Treatment values('AT078', '20/12/2023', 'MT002', 'AN020'); 
+insert into Animal_Treatment values('AT079', '20/12/2023', 'MT003', 'AN020'); 
+insert into Animal_Treatment values('AT080', '23/12/2023', 'MT036', 'AN015'); 
+insert into Animal_Treatment values('AT081', '25/12/2023', 'MT001', 'AN021'); 
+insert into Animal_Treatment values('AT082', '25/12/2023', 'MT002', 'AN021'); 
+insert into Animal_Treatment values('AT083', '25/12/2023', 'MT003', 'AN021');  
+insert into Animal_Treatment values('AT084', '01/01/2024', 'MT001', 'AN022'); 
+insert into Animal_Treatment values('AT085', '01/01/2024', 'MT002', 'AN022'); 
+insert into Animal_Treatment values('AT086', '01/01/2024', 'MT003', 'AN022'); 
+insert into Animal_Treatment values('AT087', '05/01/2024', 'MT009', 'AN021'); 
+insert into Animal_Treatment values('AT088', '07/01/2024', 'MT032', 'AN021'); 
+insert into Animal_Treatment values('AT089', '14/01/2024', 'MT001', 'AN023'); 
+insert into Animal_Treatment values('AT090', '14/01/2024', 'MT002', 'AN023'); 
+insert into Animal_Treatment values('AT091', '14/01/2024', 'MT003', 'AN023'); 
+insert into Animal_Treatment values('AT092', '19/01/2024', 'MT038', 'AN023');  
+insert into Animal_Treatment values('AT093', '22/01/2024', 'MT001', 'AN024'); 
+insert into Animal_Treatment values('AT094', '22/01/2024', 'MT002', 'AN024'); 
+insert into Animal_Treatment values('AT095', '22/01/2024', 'MT003', 'AN024'); 
+insert into Animal_Treatment values('AT096', '22/01/2024', 'MT044', 'AN024'); 
+insert into Animal_Treatment values('AT097', '27/01/2024', 'MT001', 'AN025');
+insert into Animal_Treatment values('AT098', '27/01/2024', 'MT002', 'AN025'); 
+insert into Animal_Treatment values('AT099', '27/01/2024', 'MT003', 'AN025'); 
+insert into Animal_Treatment values('AT100', '29/01/2024', 'MT018', 'AN023'); 
+insert into Animal_Treatment values('AT101', '30/01/2024', 'MT001', 'AN026');
+insert into Animal_Treatment values('AT102', '30/01/2024', 'MT002', 'AN026'); 
+insert into Animal_Treatment values('AT103', '30/01/2024', 'MT003', 'AN026');
+insert into Animal_Treatment values('AT104', '02/02/2024', 'MT043', 'AN024'); 
+insert into Animal_Treatment values('AT105', '05/02/2024', 'MT027', 'AN026');
+insert into Animal_Treatment values('AT106', '08/02/2024', 'MT001', 'AN027'); 
+insert into Animal_Treatment values('AT107', '08/02/2024', 'MT002', 'AN027'); 
+insert into Animal_Treatment values('AT108', '08/02/2024', 'MT003', 'AN027'); 
+insert into Animal_Treatment values('AT109', '13/02/2024', 'MT001', 'AN028'); 
+insert into Animal_Treatment values('AT110', '13/02/2024', 'MT002', 'AN028'); 
+insert into Animal_Treatment values('AT111', '13/02/2024', 'MT003', 'AN028'); 
+insert into Animal_Treatment values('AT112', '17/02/2024', 'MT044', 'AN028'); 
+insert into Animal_Treatment values('AT113', '19/02/2024', 'MT038', 'AN027');
+insert into Animal_Treatment values('AT114', '24/02/2024', 'MT001', 'AN029'); 
+insert into Animal_Treatment values('AT115', '24/02/2024', 'MT002', 'AN029'); 
+insert into Animal_Treatment values('AT116', '24/02/2024', 'MT003', 'AN029'); 
+insert into Animal_Treatment values('AT117', '26/02/2024', 'MT022', 'AN029'); 
+insert into Animal_Treatment values('AT118', '27/02/2024', 'MT040', 'AN029'); 
+insert into Animal_Treatment values('AT119', '28/02/2024', 'MT012', 'AN029');
+insert into Animal_Treatment values('AT120', '03/03/2024', 'MT001', 'AN030'); 
+insert into Animal_Treatment values('AT121', '03/03/2024', 'MT002', 'AN030'); 
+insert into Animal_Treatment values('AT122', '03/03/2024', 'MT003', 'AN030'); 
+insert into Animal_Treatment values('AT123', '06/03/2024', 'MT034', 'AN030'); 
+insert into Animal_Treatment values('AT124', '07/03/2024', 'MT001', 'AN031'); 
+insert into Animal_Treatment values('AT125', '07/03/2024', 'MT002', 'AN031'); 
+insert into Animal_Treatment values('AT126', '07/03/2024', 'MT003', 'AN031'); 
+insert into Animal_Treatment values('AT127', '11/03/2024', 'MT006', 'AN031'); 
+insert into Animal_Treatment values('AT128', '15/03/2024', 'MT001', 'AN032'); 
+insert into Animal_Treatment values('AT129', '15/03/2024', 'MT002', 'AN032'); 
+insert into Animal_Treatment values('AT130', '15/03/2024', 'MT003', 'AN032'); 
+insert into Animal_Treatment values('AT131', '19/03/2024', 'MT031', 'AN032'); 
+insert into Animal_Treatment values('AT132', '19/03/2024', 'MT001', 'AN033'); 
+insert into Animal_Treatment values('AT133', '19/03/2024', 'MT002', 'AN033');
+insert into Animal_Treatment values('AT134', '19/03/2024', 'MT003', 'AN033'); 
+insert into Animal_Treatment values('AT135', '21/03/2024', 'MT001', 'AN034'); 
+insert into Animal_Treatment values('AT136', '21/03/2024', 'MT002', 'AN034'); 
+insert into Animal_Treatment values('AT137', '21/03/2024', 'MT003', 'AN034');
+insert into Animal_Treatment values('AT138', '22/03/2024', 'MT019', 'AN023'); 
+insert into Animal_Treatment values('AT139', '23/03/2024', 'MT006', 'AN033'); 
+insert into Animal_Treatment values('AT140', '23/03/2024', 'MT006', 'AN034'); 
+insert into Animal_Treatment values('AT141', '25/03/2024', 'MT001', 'AN035'); 
+insert into Animal_Treatment values('AT142', '25/03/2024', 'MT002', 'AN035'); 
+insert into Animal_Treatment values('AT143', '25/03/2024', 'MT003', 'AN035');
+insert into Animal_Treatment values('AT144', '30/03/2024', 'MT027', 'AN035');
+insert into Animal_Treatment values('AT145', '07/04/2024', 'MT001', 'AN036'); 
+insert into Animal_Treatment values('AT146', '07/04/2024', 'MT002', 'AN036'); 
+insert into Animal_Treatment values('AT147', '07/04/2024', 'MT003', 'AN036'); 
+insert into Animal_Treatment values('AT148', '07/04/2024', 'MT001', 'AN037'); 
+insert into Animal_Treatment values('AT149', '07/04/2024', 'MT002', 'AN037'); 
+insert into Animal_Treatment values('AT150', '07/04/2024', 'MT003', 'AN037'); 
+insert into Animal_Treatment values('AT151', '12/04/2024', 'MT001', 'AN038'); 
+insert into Animal_Treatment values('AT152', '12/04/2024', 'MT002', 'AN038'); 
+insert into Animal_Treatment values('AT153', '12/04/2024', 'MT003', 'AN038');
+insert into Animal_Treatment values('AT154', '14/04/2024', 'MT049', 'AN038'); 
+insert into Animal_Treatment values('AT155', '15/04/2024', 'MT001', 'AN039'); 
+insert into Animal_Treatment values('AT156', '15/04/2024', 'MT002', 'AN039'); 
+insert into Animal_Treatment values('AT157', '15/04/2024', 'MT003', 'AN039'); 
+insert into Animal_Treatment values('AT158', '20/04/2024', 'MT046', 'AN038'); 
+insert into Animal_Treatment values('AT159', '23/04/2024', 'MT001', 'AN040'); 
+insert into Animal_Treatment values('AT160', '23/04/2024', 'MT002', 'AN040'); 
+insert into Animal_Treatment values('AT161', '23/04/2024', 'MT003', 'AN040');
+insert into Animal_Treatment values('AT162', '23/04/2024', 'MT037', 'AN038');
+insert into Animal_Treatment values('AT163', '30/04/2024', 'MT001', 'AN041'); 
+insert into Animal_Treatment values('AT164', '30/04/2024', 'MT002', 'AN041'); 
+insert into Animal_Treatment values('AT165', '30/04/2024', 'MT003', 'AN041');  
+insert into Animal_Treatment values('AT166', '05/05/2024', 'MT001', 'AN042'); 
+insert into Animal_Treatment values('AT167', '05/05/2024', 'MT002', 'AN042'); 
+insert into Animal_Treatment values('AT168', '05/05/2024', 'MT003', 'AN042');  
+insert into Animal_Treatment values('AT169', '05/05/2024', 'MT033', 'AN041'); 
+insert into Animal_Treatment values('AT170', '08/05/2024', 'MT017', 'AN042'); 
+insert into Animal_Treatment values('AT171', '11/05/2024', 'MT001', 'AN043'); 
+insert into Animal_Treatment values('AT172', '11/05/2024', 'MT002', 'AN043');
+insert into Animal_Treatment values('AT173', '11/05/2024', 'MT003', 'AN043');  
+insert into Animal_Treatment values('AT174', '15/05/2024', 'MT025', 'AN041'); 
+insert into Animal_Treatment values('AT175', '17/05/2024', 'MT034', 'AN040'); 
+insert into Animal_Treatment values('AT176', '18/05/2024', 'MT001', 'AN044'); 
+insert into Animal_Treatment values('AT177', '18/05/2024', 'MT002', 'AN044'); 
+insert into Animal_Treatment values('AT178', '18/05/2024', 'MT003', 'AN044'); 
+insert into Animal_Treatment values('AT179', '20/05/2024', 'MT001', 'AN045'); 
+insert into Animal_Treatment values('AT180', '20/05/2024', 'MT002', 'AN045'); 
+insert into Animal_Treatment values('AT181', '20/05/2024', 'MT003', 'AN045'); 
+insert into Animal_Treatment values('AT182', '23/05/2024', 'MT018', 'AN020'); 
+insert into Animal_Treatment values('AT183', '27/05/2024', 'MT001', 'AN046'); 
+insert into Animal_Treatment values('AT184', '27/05/2024', 'MT002', 'AN046'); 
+insert into Animal_Treatment values('AT185', '27/05/2024', 'MT003', 'AN046');
+insert into Animal_Treatment values('AT186', '02/06/2024', 'MT043', 'AN044'); 
+insert into Animal_Treatment values('AT187', '07/06/2024', 'MT001', 'AN047');
+insert into Animal_Treatment values('AT188', '07/06/2024', 'MT002', 'AN047'); 
+insert into Animal_Treatment values('AT189', '07/06/2024', 'MT003', 'AN047'); 
+insert into Animal_Treatment values('AT190', '16/06/2024', 'MT001', 'AN048'); 
+insert into Animal_Treatment values('AT191', '16/06/2024', 'MT002', 'AN048'); 
+insert into Animal_Treatment values('AT192', '16/06/2024', 'MT003', 'AN048'); 
+insert into Animal_Treatment values('AT193', '20/06/2024', 'MT001', 'AN049'); 
+insert into Animal_Treatment values('AT194', '20/06/2024', 'MT002', 'AN049'); 
+insert into Animal_Treatment values('AT195', '20/06/2024', 'MT003', 'AN049'); 
+insert into Animal_Treatment values('AT196', '23/06/2024', 'MT044', 'AN020'); 
+insert into Animal_Treatment values('AT197', '23/06/2024', 'MT032', 'AN049'); 
+insert into Animal_Treatment values('AT198', '25/06/2024', 'MT028', 'AN029');
+insert into Animal_Treatment values('AT199', '28/06/2024', 'MT001', 'AN050'); 
+insert into Animal_Treatment values('AT200', '28/06/2024', 'MT002', 'AN050'); 
+insert into Animal_Treatment values('AT201', '28/06/2024', 'MT003', 'AN050');  
+insert into Animal_Treatment values('AT202', '28/06/2024', 'MT040', 'AN031'); 
+insert into Animal_Treatment values('AT203', '30/06/2024', 'MT036', 'AN050');
+insert into Animal_Treatment values('AT204', '03/07/2024', 'MT001', 'AN051'); 
+insert into Animal_Treatment values('AT205', '03/07/2024', 'MT002', 'AN051'); 
+insert into Animal_Treatment values('AT206', '03/07/2024', 'MT003', 'AN051'); 
+insert into Animal_Treatment values('AT207', '03/07/2024', 'MT034', 'AN050'); 
+insert into Animal_Treatment values('AT208', '06/07/2024', 'MT001', 'AN052'); 
+insert into Animal_Treatment values('AT209', '06/07/2024', 'MT002', 'AN052'); 
+insert into Animal_Treatment values('AT210', '06/07/2024', 'MT003', 'AN052'); 
+insert into Animal_Treatment values('AT211', '13/07/2024', 'MT001', 'AN053'); 
+insert into Animal_Treatment values('AT212', '13/07/2024', 'MT002', 'AN053'); 
+insert into Animal_Treatment values('AT213', '13/07/2024', 'MT003', 'AN053');
+insert into Animal_Treatment values('AT214', '17/07/2024', 'MT031', 'AN051');
+insert into Animal_Treatment values('AT215', '18/07/2024', 'MT016', 'AN052');  
+insert into Animal_Treatment values('AT216', '20/07/2024', 'MT001', 'AN054'); 
+insert into Animal_Treatment values('AT217', '20/07/2024', 'MT002', 'AN054'); 
+insert into Animal_Treatment values('AT218', '20/07/2024', 'MT003', 'AN054'); 
+insert into Animal_Treatment values('AT219', '23/07/2024', 'MT034', 'AN029'); 
+insert into Animal_Treatment values('AT220', '26/07/2024', 'MT006', 'AN036');
+insert into Animal_Treatment values('AT221', '27/07/2024', 'MT001', 'AN055'); 
+insert into Animal_Treatment values('AT222', '27/07/2024', 'MT002', 'AN055'); 
+insert into Animal_Treatment values('AT223', '27/07/2024', 'MT003', 'AN055'); 
+insert into Animal_Treatment values('AT224', '10/08/2024', 'MT001', 'AN056'); 
+insert into Animal_Treatment values('AT225', '10/08/2024', 'MT002', 'AN056'); 
+insert into Animal_Treatment values('AT226', '10/08/2024', 'MT003', 'AN056');
+insert into Animal_Treatment values('AT227', '12/08/2024', 'MT029', 'AN056'); 
+insert into Animal_Treatment values('AT228', '15/08/2024', 'MT001', 'AN057'); 
+insert into Animal_Treatment values('AT229', '15/08/2024', 'MT002', 'AN057'); 
+insert into Animal_Treatment values('AT230', '15/08/2024', 'MT003', 'AN057'); 
+insert into Animal_Treatment values('AT231', '17/08/2024', 'MT001', 'AN058'); 
+insert into Animal_Treatment values('AT232', '17/08/2024', 'MT002', 'AN058'); 
+insert into Animal_Treatment values('AT233', '17/08/2024', 'MT003', 'AN058');
+insert into Animal_Treatment values('AT234', '17/08/2024', 'MT049', 'AN057');  
+insert into Animal_Treatment values('AT235', '21/08/2024', 'MT001', 'AN059'); 
+insert into Animal_Treatment values('AT236', '21/08/2024', 'MT002', 'AN059'); 
+insert into Animal_Treatment values('AT237', '21/08/2024', 'MT003', 'AN059');  
+insert into Animal_Treatment values('AT238', '22/08/2024', 'MT034', 'AN051'); 
+insert into Animal_Treatment values('AT239', '03/09/2024', 'MT001', 'AN060'); 
+insert into Animal_Treatment values('AT240', '03/09/2024', 'MT002', 'AN060');
+insert into Animal_Treatment values('AT241', '03/09/2024', 'MT003', 'AN060');
+insert into Animal_Treatment values('AT242', '05/09/2024', 'MT037', 'AN060');
+
+insert into Promotion values('GM3Y99', '09/09/2023');
+insert into Promotion values('ET7M47', '11/10/2023');
+insert into Promotion values('EA2V64', '01/12/2023');
+insert into Promotion values('LL9U99', '18/01/2024');
+insert into Promotion values('WY5B87', '06/03/2024');
+insert into Promotion values('BJ0F86', '30/03/2024');
+insert into Promotion values('MT7M91', '01/05/2024');
+insert into Promotion values('IU7X20', '11/06/2024');
+insert into Promotion values('MU5E22', '07/07/2024');
+insert into Promotion values('YK1W53', '02/08/2024');
+insert into Promotion values('AK5Q52', '19/08/2024');
+insert into Promotion values('RX3C94', '05/09/2024');
+
+insert into Promotion_Details values('09/09/2023', '20/09/2023');
+insert into Promotion_Details values('11/10/2023', '18/10/2023');
+insert into Promotion_Details values('01/12/2023', '14/12/2023');
+insert into Promotion_Details values('18/01/2024', '02/02/2024');
+insert into Promotion_Details values('06/03/2024', '13/03/2024');
+insert into Promotion_Details values('30/03/2024', '09/04/2024');
+insert into Promotion_Details values('01/05/2024', '19/05/2024');
+insert into Promotion_Details values('11/06/2024', '22/06/2024');
+insert into Promotion_Details values('07/07/2024', '14/07/2024');
+insert into Promotion_Details values('02/08/2024', '10/08/2024');
+insert into Promotion_Details values('19/08/2024', '26/08/2024');
+insert into Promotion_Details values('05/09/2024', '17/09/2024');
+
+insert into Payment values('PY001', '01/08/2024', 'E-Wallet', 710.00, 710.00, NULL, NULL, 'AD001', NULL);
+insert into Payment values('PY002', '02/08/2024', NULL, 1820.00, 0.00, 'DS001', 'Herding dog training' , 'AD002', 'AK5Q52');
+insert into Payment values('PY003', '05/08/2024', 'Online Banking', 1290.00, 180.00, 'DS002', 'Potty training for adult dogs', 'AD003', 'RX3C94');
+insert into Payment values('PY004', '08/08/2024', 'E-Wallet', 820.00,  0.00, 'DS003' , NULL, 'AD004', 'GM3Y99');
+insert into Payment values('PY005', '12/08/2024', 'TnG', 2940.00, 300.00, NULL,  'Protection training for large dogs', 'AD005', NULL);
+insert into Payment values('PY006', '15/08/2024', NULL, 2230.00, 0.00, NULL, 'Protection training', 'AD006', 'EA2V64');
+insert into Payment values('PY007', '18/08/2024', 'E-Wallet', 1360.00, 90.00, 'DS004', 'Heel training', 'AD007', 'LL9U99');
+insert into Payment values('PY008', '22/08/2024', 'TnG', 865.00, 865.00, 'DS005', NULL, 'AD008', NULL);
+insert into Payment values('PY009', '25/08/2024', NULL, 730.00, 0.00, 'DS006', NULL, 'AD009', 'BJ0F86');
+insert into Payment values('PY010', '30/08/2024', 'E-Wallet', 2815.00, 2815.00, 'DS007', 'Puppy manners training', 'AD010', NULL);
+insert into Payment values('PY011', '02/09/2024', 'TnG', 870.00, 225.00, NULL, NULL, 'AD011', 'IU7X20');
+insert into Payment values('PY012', '05/09/2024', NULL, 2520.00, 0.00, 'DS008', 'Guard dog training', 'AD012', 'MU5E22');
+insert into Payment values('PY013', '08/09/2024', 'E-Wallet', 860.00, 860.00, NULL, NULL, 'AD013', NULL);
+insert into Payment values('PY014', '10/09/2024', NULL, 1310.00, 0.00, 'DS009', 'Puppy manners training', 'AD014', 'AK5Q52');
+insert into Payment values('PY015', '12/09/2024', 'Online Banking', 1415.00, 250.00, 'DS010', 'Destructive chewing training', 'AD015', 'RX3C94');
+insert into Payment values('PY016', '15/09/2024', 'E-Wallet', 730.00, 730.00, 'DS011', NULL, 'AD016', NULL);
+insert into Payment values('PY017', '18/09/2024', NULL, 1230.00, 0.00, NULL, 'Heel training', 'AD017', 'ET7M47');
+insert into Payment values('PY018', '20/09/2024', NULL, 4220.00, 0.00, 'DS012', 'Digging prevention training', 'AD018', 'EA2V64');
+insert into Payment values('PY019', '22/09/2024', 'E-Wallet', 1220.00, 200.00, NULL, 'Stay and wait training', 'AD019', 'LL9U99');
+insert into Payment values('PY020', '25/09/2024', 'TnG', 1930.00, 1930.00, 'DS012', 'Recall training for hunting dogs', 'AD020', NULL);
+insert into Payment values('PY021', '28/09/2024', NULL, 780.00, 0.00, 'DS014', NULL, 'AD021', 'BJ0F86');
+insert into Payment values('PY022', '01/10/2024', 'E-Wallet', 1975.00, 1975.00, 'DS015', 'Fear and anxiety management', 'AD022', NULL);
+insert into Payment values('PY023', '05/10/2024', 'TnG', 1420.00, 250.00, 'DS016', 'Positive reinforcement training', 'AD023', 'IU7X20');
+insert into Payment values('PY024', '08/10/2024', 'Online Banking', 760.00, 760.00, NULL, NULL, 'AD024', NULL);
+insert into Payment values('PY025', '11/10/2024', NULL, 3550.00, 0.00, 'DS017', 'Protection training', 'AD025', 'YK1W53');
+insert into Payment values('PY026', '15/10/2024', 'TnG', 730.00, 730.00, 'DS018', NULL, 'AD026', NULL);
+insert into Payment values('PY027', '18/10/2024', NULL, 865.00, 0.00, 'DS019', NULL, 'AD027', 'RX3C94');
+insert into Payment values('PY028', '22/10/2024', 'E-Wallet',1080.00, 1080.00, 'DS020', 'Crate training', 'AD028', NULL);
+insert into Payment values('PY029', '25/10/2024', NULL, 1720.00, 0.00, 'DS021', NULL, 'AD029', 'ET7M47');
+insert into Payment values('PY030', '30/10/2024', 'Online Banking', 4915.00, 4915.00, 'DS022', 'Guard dog training','AD030', NULL);
+insert into Donation values('DN001', 'Ahmad Zulkifli', 150.00, '01/08/2024', 'Bank Transfer', 'SH002');
+insert into Donation values('DN002', 'Nurul Ain', 200.50, '01/08/2024', 'Cash', 'SH003');
+insert into Donation values('DN003', 'Muhammad Hafiz', 300.75, '02/08/2024', 'Credit Card', 'SH010');
+insert into Donation values('DN004', 'Siti Aishah', 100.00, '02/08/2024', 'Debit Card', 'SH004');
+insert into Donation values('DN005', 'Faridah Abu Bakar', 250.00, '03/08/2024', 'Bank Transfer', 'SH010');
+insert into Donation values('DN006', 'Zainal Abidin', 125.25, '03/08/2024', 'Credit Card', 'SH006');
+insert into Donation values('DN007', 'Lee Wei Ling', 175.50, '03/08/2024', 'Cash', 'SH001');
+insert into Donation values('DN008', 'Aina Zulaikha', 80.75, '04/08/2024', 'Debit Card', 'SH006');
+insert into Donation values('DN009', 'Roslan Mohamad', 90.00, '04/08/2024', 'Bank Transfer', 'SH004');
+insert into Donation values('DN010', 'Wan Syafiq', 300.50, '04/08/2024', 'Credit Card', 'SH008');
+insert into Donation values('DN011', 'Syafiqah Noraini', 220.00, '05/08/2024', 'Debit Card', 'SH004');
+insert into Donation values('DN012', 'Nabilah Amin', 155.00, '05/08/2024', 'Bank Transfer', 'SH002');
+insert into Donation values('DN013', 'Amirul Iqmal', 400.00, '06/08/2024', 'Cash', 'SH003');
+insert into Donation values('DN014', 'Khairul Anwar', 95.00, '06/08/2024', 'Credit Card', 'SH003');
+insert into Donation values('DN015', 'Norashikin Salleh', 180.75, '07/08/2024', 'Debit Card', 'SH005');
+insert into Donation values('DN016', 'Hidayah Osman', 210.50, '07/08/2024', 'Bank Transfer', 'SH006');
+insert into Donation values('DN017', 'Faizul Rahman', 195.00, '07/08/2024', 'Cash', 'SH007');
+insert into Donation values('DN018', 'Suhaila Ismail', 135.50, '08/08/2024', 'Credit Card', 'SH008');
+insert into Donation values('DN019', 'Tan Siew Ming', 260.25, '08/08/2024', 'Debit Card', 'SH010');
+insert into Donation values('DN020', 'Hafizah Kamal', 185.00, '09/08/2024', 'Bank Transfer', 'SH009');
+insert into Donation values('DN021', 'Ramesh Chandran', 310.75, '09/08/2024', 'Credit Card', 'SH001');
+insert into Donation values('DN022', 'Lim Wei Sheng', 120.00, '10/08/2024', 'Cash', 'SH002');
+insert into Donation values('DN023', 'Aishah Zainudin', 175.50, '10/08/2024', 'Debit Card', 'SH003');
+insert into Donation values('DN024', 'Suresh Kumar', 250.00, '11/08/2024', 'Bank Transfer', 'SH004');
+insert into Donation values('DN025', 'Chong Li Wei', 140.75, '11/08/2024', 'Credit Card', 'SH003');
+insert into Donation values('DN026', 'Mohamed Arif', 180.00, '12/08/2024', 'Debit Card', 'SH006');
+insert into Donation values('DN027', 'Lily Tan', 160.25, '12/08/2024', 'Cash', 'SH007');
+insert into Donation values('DN028', 'Rajesh Singh', 275.00, '13/08/2024', 'Bank Transfer', 'SH008');
+insert into Donation values('DN029', 'Lim Kok Wei', 300.00, '13/08/2024', 'Credit Card', 'SH001');
+insert into Donation values('DN030', 'Meena Raman', 195.50, '14/08/2024', 'Cash', 'SH006');
+insert into Donation values('DN031', 'Ng Wei Han', 220.00, '14/08/2024', 'Debit Card', 'SH005');
+insert into Donation values('DN032', 'Siva Kumar', 320.00, '15/08/2024', 'Bank Transfer', 'SH002');
+insert into Donation values('DN033', 'Cheng Mei Ling', 180.00, '15/08/2024', 'Credit Card', 'SH002');
+insert into Donation values('DN034', 'Rani Devi', 200.00, '16/08/2024', 'Cash', 'SH006');
+insert into Donation values('DN035', 'Tan Heng Leong', 140.75, '16/08/2024', 'Debit Card', 'SH008');
+insert into Donation values('DN036', 'Kumar Raj', 250.00, '17/08/2024', 'Bank Transfer', 'SH007');
+insert into Donation values('DN037', 'Li Mei Yun', 90.00, '17/08/2024', 'Credit Card', 'SH006');
+insert into Donation values('DN038', 'Ayu Rahmah', 230.50, '18/08/2024', 'Cash', 'SH007');
+insert into Donation values('DN039', 'Zhang Wei', 300.00, '19/08/2024', 'Debit Card', 'SH009');
+insert into Donation values('DN040', 'Harinder Singh', 180.75, '19/08/2024', 'Bank Transfer', 'SH010');
+
+UPDATE Adoption
+SET Adoption_Fee = (SELECT SUM(M.Medical_Treatment_Cost)
+                                    FROM Medical_Treatment M 
+                                    JOIN Animal_Treatment A ON A.Medical_Treatment_ID = 		                    
+                                    M.Medical_Treatment_ID
+                                    WHERE A.Animal_ID = Adoption.Animal_ID) 
+WHERE Adoption_Fee Is NULL;
